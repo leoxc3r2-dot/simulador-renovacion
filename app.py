@@ -24,9 +24,9 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 # --- Listas de datos para la simulación aleatoria ---
 perfiles_brokers = [
     {'nombre': 'Carlos Ruiz', 'tipo': 'broker', 'personalidad': 'Orientado a resultados.', 'motivacion': 'Busca una renovación rápida y con buena comisión.'},
-    {'nombre': 'Laura Gómez', 'tipo': 'broker', 'personalidad': 'Meticulosa, se preocupa por los detalles.', 'motivacion': 'Quiere estar segura de que la póliza cubre todo sin fallos.'},
+    {'nombre': 'Laura Gómez', 'tipo': 'broker', 'personalidad': 'Meticulosa, se preocupa por los detalles.', 'motivacion': 'Quiere estar segura de que la protección cubre todo sin fallos.'},
     {'nombre': 'Diego López', 'tipo': 'broker', 'personalidad': 'Amistoso y conversador.', 'motivacion': 'Se basa en la relación de confianza que tiene con el propietario.'},
-    {'nombre': 'Fernanda Torres', 'tipo': 'broker', 'personalidad': 'Escéptica, se enfoca en el valor.', 'motivacion': 'Necesita ver el retorno de inversión y que el producto valga el costo.'},
+    {'nombre': 'Fernanda Torres', 'tipo': 'broker', 'personalidad': 'Escéptica, se enfoca en el valor.', 'motivacion': 'Necesita ver el retorno de inversión y que el servicio valga el costo.'},
     {'nombre': 'Andrés Mora', 'tipo': 'broker', 'personalidad': 'Joven, quiere aprender.', 'motivacion': 'Se siente inseguro y busca la mejor opción para no equivocarse.'},
 ]
 
@@ -48,20 +48,57 @@ tipos_de_producto = [
 ]
 rango_renta = (1000, 100000)
 
+# Información de los servicios de MoradaUno
+informacion_productos = {
+    'M12 Habitacional': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
+    'M12 Comercial': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
+    'M3 Habitacional': "Ofrece hasta 3 meses de protección de renta, con servicio anual de protección legal para el inmueble.",
+    'M3 Comercial': "Ofrece hasta 3 meses de protección de renta, con servicio anual de protección legal para el inmueble.",
+    'MLegal Habitacional': "Se enfoca en la protección legal. Incluye la asesoría y defensa legal para su propiedad, cubriendo los gastos necesarios para su recuperación.",
+    'MLegal Comercial': "Se enfoca en la protección legal. Incluye la asesoría y defensa legal para su propiedad, cubriendo los gastos necesarios para su recuperación.",
+    'M3 Light Habitacional': "Actualmente no está disponible. Incluía hasta 3 meses de protección de renta con servicio de protección legal, para rentas superiores a $20,000, con un límite de pago de hasta $10,000.",
+    'M3 Light Comercial': "Actualmente no está disponible. Incluía hasta 3 meses de protección de renta con servicio de protección legal, para rentas superiores a $20,000, con un límite de pago de hasta $10,000."
+}
+
 # --- Lógica de la Simulación ---
 def generar_instruccion_ia(perfil, detalles_del_caso):
+    numero_aleatorio = random.randint(1000, 9999)
+    inmueble = f"A{numero_aleatorio}"
+    
     reglas_generales = f"""
     Eres el/la {perfil['tipo']} llamado/a {perfil['nombre']}. Tu personalidad es '{perfil['personalidad']}' y tu motivación principal es: '{perfil['motivacion']}'.
+    
+    El contexto es el siguiente: Eres el/la propietario/a del inmueble con folio de renta {inmueble} y estás próximo/a a renovar el servicio de protección de renta con MoradaUno.
     
     Detalles de la renovación:
     - Producto actual: {detalles_del_caso['producto_actual']}
     - Uso de suelo: {detalles_del_caso['uso_suelo']}
     - Monto de renta: ${detalles_del_caso['monto_renta']:,} MXN
+    - Inmueble: {inmueble}
+    
+    Información que tienes sobre el servicio:
+    - MoradaUno ofrece un servicio de protección de rentas que cubre el impago de alquiler.
+    - La protección de renta es un escudo financiero.
+    - Al contratar, el propietario traslada la responsabilidad de pago a MoradaUno. Si el inquilino incumple, MoradaUno paga al propietario y se encarga de los trámites legales y cobranza.
+    - El producto actual, {detalles_del_caso['producto_actual']}, se describe así: {informacion_productos[detalles_del_caso['producto_actual']]}.
+    - Si tu producto es M3 Light, sabes que ya no está disponible.
+    - Tu inquilino actual es el Sr. Juan Pérez y la obligada solidaria es la Sra. Ana García.
     
     Reglas del juego:
+    - El inquilino se puede retirar, en esos casos no se puede renovar.
     - Debes poner objeciones lógicas basadas en tu perfil.
-    - Puedes preguntar en ocasiones si la renovación tendrá algún descuento y si puede tener algún descuento adicional.
-    - Puedes pedir en ocasiones cambios de productos por otro diferente al que tienes.
+    - Puedes preguntar si la renovación tendrá algún descuento y si puede tener algún descuento adicional.
+    - Puedes pedir cambios en las figuras del inquilino o del obligado solidario.
+    - Puedes preguntar cómo funcionan las protecciones para tener un mejor entendimiento del servicio.
+    - Objeciones comunes a mencionar:
+        - "El servicio es caro, y no estoy seguro de si vale la pena seguir pagando."
+        - "No he tenido problemas con el pago, por lo que no veo la necesidad de seguir pagando."
+        - "Mi inquilino siempre ha sido puntual, tengo confianza en él."
+        - "No estoy seguro de qué tan completo es el servicio y qué situaciones exactas cubre."
+        - "Considero que existen otras formas de proteger mis ingresos de alquiler."
+        - "No estoy completamente seguro de que el servicio de protección de renta funcione como promete."
+        - "No quiero complicarme con un proceso de renovación largo o burocrático."
+        - Puedes preguntar si la renta subirá conforme a la inflación o si se mantendrá igual.
     """
     if perfil['tipo'] == 'broker':
         reglas_especificas = "Como broker, obtienes una comisión por la renovación. Tu motivación es también lograr la renovación por la comisión."
@@ -90,16 +127,16 @@ def iniciar_simulacion():
     model = genai.GenerativeModel('gemini-1.5-flash')
     st.session_state.chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
     
-    objecion_inicial = st.session_state.chat_history.send_message("Da tu objeción inicial para que el agente te convenza.").text
+    objecion_inicial = st.session_state.chat_history.send_message("Inicia la conversación como si estuvieras revisando tu próxima renovación y da una primera objeción o pregunta.").text
     
     st.session_state.mensajes.append({"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"})
 
 # --- Interfaz de Usuario de Streamlit ---
-st.title("Simulador de Negociación para Renovaciones")
+st.title("Simulador de Negociación de MoradaUno")
 
 st.markdown("""
-    Este simulador te ayuda a practicar el manejo de objeciones con brokers y propietarios inmobiliarios.
-    Cada vez que inicies una simulación, te enfrentarás a un perfil aleatorio con sus propias motivaciones y reglas de negocio.
+    Este simulador te ayuda a practicar el manejo de objeciones con brokers y propietarios inmobiliarios en el contexto de MoradaUno.
+    Cada vez que inicies una simulación, te enfrentarás a un perfil aleatorio con sus propias motivaciones y reglas.
 
     **Instrucciones:**
     1. Presiona el botón **"Iniciar Simulación"** para comenzar.
