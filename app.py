@@ -174,4 +174,3 @@ if prompt := st.chat_input("Escribe tu respuesta aquí..."):
         with st.spinner("Pensando..."):
             response = st.session_state.chat_history.send_message(prompt)
             st.session_state.mensajes.append({"role": "assistant", "content": response.text})
-    st.experimental_rerun()
