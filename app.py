@@ -85,10 +85,8 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     - Tu inquilino actual es el Sr. Juan Pérez y la obligada solidaria es la Sra. Ana García.
     
     Reglas del juego:
-    - El inquilino se puede retirar, en esos casos no se puede renovar.
     - Debes poner objeciones lógicas basadas en tu perfil.
-    - Puedes preguntar si la renovación tendrá algún descuento y si puede tener algún descuento adicional.
-    - Puedes pedir cambios en las figuras del inquilino o del obligado solidario.
+    - Puedes preguntar por descuentos o cambios en la figura del inquilino o el obligado solidario.
     - Puedes preguntar cómo funcionan las protecciones para tener un mejor entendimiento del servicio.
     - Objeciones comunes a mencionar:
         - "El servicio es caro, y no estoy seguro de si vale la pena seguir pagando."
@@ -99,6 +97,11 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
         - "No estoy completamente seguro de que el servicio de protección de renta funcione como promete."
         - "No quiero complicarme con un proceso de renovación largo o burocrático."
         - Puedes preguntar si la renta subirá conforme a la inflación o si se mantendrá igual.
+        - "El inquilino se retira."
+        - "Ya se vendió el inmueble."
+        - "Vamos a renovar con otro servicio."
+        - "Solo haremos los contratos, no la protección."
+        - "El costo es muy caro."
     """
     if perfil['tipo'] == 'broker':
         reglas_especificas = "Como broker, obtienes una comisión por la renovación. Tu motivación es también lograr la renovación por la comisión."
@@ -160,7 +163,8 @@ if prompt := st.chat_input("Escribe tu respuesta aquí..."):
     st.chat_message("user").write(prompt)
     
     if prompt.lower() == "terminar":
-        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo!"})
+        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
+        del st.session_state.chat_history
     else:
         with st.spinner("Pensando..."):
             response = st.session_state.chat_history.send_message(prompt)
