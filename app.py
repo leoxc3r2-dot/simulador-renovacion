@@ -67,4 +67,111 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     inmueble = f"A{numero_aleatorio}"
     
     reglas_generales = f"""
-    Eres el/la {perfil['tipo']} llamado/a {perfil['nombre']}. Tu personalidad es '{perfil
+    Eres el/la {perfil['tipo']} llamado/a {perfil['nombre']}. Tu personalidad es '{perfil['personalidad']}' y tu motivación principal es: '{perfil['motivacion']}'.
+    
+    El contexto es el siguiente: Eres el/la propietario/a del inmueble con folio de renta {inmueble} y estás próximo/a a renovar el servicio de protección de renta con MoradaUno.
+    
+    Detalles de la renovación:
+    - Producto actual: {detalles_del_caso['producto_actual']}
+    - Uso de suelo: {detalles_del_caso['uso_suelo']}
+    - Monto de renta: ${detalles_del_caso['monto_renta']:,} MXN
+    - Inmueble: {inmueble}
+    
+    Información que tienes sobre el servicio:
+    - MoradaUno ofrece un servicio de protección de rentas que cubre el impago de alquiler.
+    - La protección de renta es un escudo financiero.
+    - Al contratar, el propietario traslada la responsabilidad de pago a MoradaUno. Si el inquilino incumple, MoradaUno paga al propietario y se encarga de los trámites legales y cobranza.
+    - El producto actual, {detalles_del_caso['producto_actual']}, se describe así: {informacion_productos[detalles_del_caso['producto_actual']]}.
+    - Si tu producto es M3 Light, sabes que ya no está disponible.
+    - Tu inquilino actual es el Sr. Juan Pérez y la obligada solidaria es la Sra. Ana García.
+    
+    Reglas del juego:
+    - Debes poner objeciones lógicas basadas en tu perfil.
+    - Puedes preguntar por descuentos o cambios en la figura del inquilino o el obligado solidario.
+    - Puedes preguntar cómo funcionan las protecciones para tener un mejor entendimiento del servicio.
+    - Objeciones comunes a mencionar:
+        - "El servicio es caro, y no estoy seguro de si vale la pena seguir pagando."
+        - "No he tenido problemas con el pago, por lo que no veo la necesidad de seguir pagando."
+        - "Mi inquilino siempre ha sido puntual, tengo confianza en él."
+        - "No estoy seguro de qué tan completo es el servicio y qué situaciones exactas cubre."
+        - "Considero que existen otras formas de proteger mis ingresos de alquiler."
+        - "No estoy completamente seguro de que el servicio de protección de renta funcione como promete."
+        - "No quiero complicarme con un proceso de renovación largo o burocrático."
+        - Puedes preguntar si la renta subirá conforme a la inflación o si se mantendrá igual.
+        - "El inquilino se retira."
+        - "Ya se vendió el inmueble."
+        - "Vamos a renovar con otro servicio."
+        - "Solo haremos los contratos, no la protección."
+        - "El costo es muy caro."
+    """
+    if perfil['tipo'] == 'broker':
+        reglas_especificas = "Como broker, obtienes una comisión por la renovación. Tu motivación es también lograr la renovación por la comisión."
+    else:
+        reglas_especificas = "Eres el/la propietario/a directo/a. No obtienes ninguna comisión."
+    
+    return f"{reglas_generales}\n{reglas_especificas}\nTu objetivo es ser persuadido/a para renovar. Responde de forma natural y realista."
+
+def iniciar_simulacion():
+    perfil_aleatorio = random.choice(perfiles_de_simulacion)
+    producto_elegido = random.choice(tipos_de_producto)
+    uso_suelo_elegido = 'Habitacional' if 'Habitacional' in producto_elegido else 'Comercial'
+
+    if 'M3 Light' in producto_elegido:
+        monto_renta_aleatorio = random.randint(rango_renta_light[0], rango_renta_light[1])
+    else:
+        monto_renta_aleatorio = random.randint(rango_renta[0], rango_renta[1])
+    
+    detalles_del_caso = {
+        'producto_actual': producto_elegido,
+        'uso_suelo': uso_suelo_elegido,
+        'monto_renta': monto_renta_aleatorio
+    }
+    
+    st.session_state.perfil_actual = perfil_aleatorio
+    st.session_state.detalles_del_caso = detalles_del_caso
+    
+    instruccion = generar_instruccion_ia(perfil_aleatorio, detalles_del_caso)
+    
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    st.session_state.chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
+    
+    objecion_inicial = st.session_state.chat_history.send_message("Inicia la conversación como si estuvieras revisando tu próxima renovación y da una primera objeción o pregunta.").text
+    
+    st.session_state.mensajes.append({"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"})
+
+# --- Interfaz de Usuario de Streamlit ---
+st.title("Simulador de Negociación de Renovaciones MoradaUno")
+
+st.markdown("""
+    Este simulador te ayuda a practicar el manejo de objeciones con brokers y propietarios inmobiliarios en el contexto de MoradaUno.
+    Cada vez que inicies una simulación, te enfrentarás a un perfil aleatorio con sus propias motivaciones y reglas.
+
+    **Instrucciones:**
+    1. Presiona el botón **"Iniciar Simulación"** para comenzar.
+    2. Lee la objeción del broker o propietario y escribe tu respuesta en el chat.
+    3. Tu objetivo es convencerlo de renovar, abordando sus objeciones de forma lógica y persuasiva.
+    4. Escribe la palabra **"terminar"** en el chat para finalizar la simulación en cualquier momento.
+""")
+
+if "mensajes" not in st.session_state:
+    st.session_state.mensajes = []
+    
+if st.button("Iniciar Simulación"):
+    st.session_state.mensajes = []
+    iniciar_simulacion()
+    
+for msg in st.session_state.mensajes:
+    st.chat_message(msg["role"]).write(msg["content"])
+
+if prompt := st.chat_input("Escribe tu respuesta aquí..."):
+    st.session_state.mensajes.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+    
+    if prompt.lower() == "terminar":
+        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
+        del st.session_state.chat_history
+    else:
+        with st.spinner("Pensando..."):
+            response = st.session_state.chat_history.send_message(prompt)
+            st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+    st.experimental_rerun()
