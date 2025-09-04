@@ -1,14 +1,25 @@
 import streamlit as st
 import random
 import google.generativeai as genai
-from IPython.display import display, HTML
 
-# Esta configuración de Streamlit no funcionará en Colab,
-# pero el resto del código es compatible.
+# --- Configuración de la Página Web y Estilo ---
+st.set_page_config(page_title="Simulador de Renovaciones", layout="wide")
+st.markdown(
+    """
+    <style>
+    .reportview-container { background: #F3E5F5; }
+    .css-1d391kg { background-color: #EDE7F6; }
+    .stButton>button { background-color: #9C27B0; color: white; border-radius: 10px; padding: 10px 24px; border: none; }
+    .stButton>button:hover { background-color: #BA68C8; }
+    .st-d { font-family: 'Arial'; }
+    .st-emotion-cache-183n41b p { background-color: #E1BEE7; padding: 10px; border-radius: 10px; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# --- Configura tu clave de API ---
-GOOGLE_API_KEY = "TU_CLAVE_API"
-genai.configure(api_key=GOOGLE_API_KEY)
+# --- Configura tu clave de API de forma segura ---
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # --- Listas de datos para la simulación aleatoria ---
 perfiles_brokers = [
@@ -71,20 +82,50 @@ def iniciar_simulacion():
         'monto_renta': monto_renta_aleatorio
     }
     
+    st.session_state.perfil_actual = perfil_aleatorio
+    st.session_state.detalles_del_caso = detalles_del_caso
+    
     instruccion = generar_instruccion_ia(perfil_aleatorio, detalles_del_caso)
     
     model = genai.GenerativeModel('gemini-1.5-flash')
-    chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
+    st.session_state.chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
     
-    objecion_inicial = chat_history.send_message("Da tu objeción inicial para que el agente te convenza.").text
+    objecion_inicial = st.session_state.chat_history.send_message("Da tu objeción inicial para que el agente te convenza.").text
     
-    display(HTML(f"<b>--- SIMULACIÓN INICIADA ---</b><br><b>Perfil:</b> {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})<br><b>Producto:</b> {detalles_del_caso['producto_actual']}<br><b>Renta:</b> ${detalles_del_caso['monto_renta']:,}<br><br><b>{perfil_aleatorio['nombre']}:</b> {objecion_inicial}"))
+    st.session_state.mensajes.append({"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"})
 
-    while True:
-        tu_respuesta = input("\nTu respuesta: ")
-        if tu_respuesta.lower() in ["terminar", "fin", "finalizar"]:
-            print("\n--- SIMULACIÓN FINALIZADA ---")
-            break
-        
-        response = chat_history.send_message(tu_respuesta).text
-        print(f"\n{perfil_aleatorio['nombre']}: {response}")
+# --- Interfaz de Usuario de Streamlit ---
+st.title("Simulador de Negociación para Renovaciones")
+
+st.markdown("""
+    Este simulador te ayuda a practicar el manejo de objeciones con brokers y propietarios inmobiliarios.
+    Cada vez que inicies una simulación, te enfrentarás a un perfil aleatorio con sus propias motivaciones y reglas de negocio.
+
+    **Instrucciones:**
+    1. Presiona el botón **"Iniciar Simulación"** para comenzar.
+    2. Lee la objeción del broker o propietario y escribe tu respuesta en el chat.
+    3. Tu objetivo es convencerlo de renovar, abordando sus objeciones de forma lógica y persuasiva.
+    4. Escribe la palabra **"terminar"** en el chat para finalizar la simulación en cualquier momento.
+""")
+
+if "mensajes" not in st.session_state:
+    st.session_state.mensajes = []
+    
+if st.button("Iniciar Simulación"):
+    st.session_state.mensajes = []
+    iniciar_simulacion()
+    
+for msg in st.session_state.mensajes:
+    st.chat_message(msg["role"]).write(msg["content"])
+
+if prompt := st.chat_input("Escribe tu respuesta aquí..."):
+    st.session_state.mensajes.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+    
+    if prompt.lower() == "terminar":
+        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo!"})
+    else:
+        with st.spinner("Pensando..."):
+            response = st.session_state.chat_history.send_message(prompt)
+            st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+    st.experimental_rerun()
