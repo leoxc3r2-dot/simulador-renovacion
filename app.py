@@ -41,4 +41,30 @@ perfiles_propietarios = [
 perfiles_de_simulacion = perfiles_brokers + perfiles_propietarios
 
 tipos_de_producto = [
-    'M1
+    'M12 Habitacional', 'M12 Comercial',
+    'M3 Habitacional', 'M3 Comercial',
+    'MLegal Habitacional', 'MLegal Comercial',
+    'M3 Light Habitacional', 'M3 Light Comercial'
+]
+rango_renta = (1000, 100000)
+rango_renta_light = (20000, 100000)
+
+# Información de los servicios de MoradaUno
+informacion_productos = {
+    'M12 Habitacional': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
+    'M12 Comercial': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
+    'M3 Habitacional': "Ofrece hasta 3 meses de protección de renta, con servicio anual de protección legal para el inmueble.",
+    'M3 Comercial': "Ofrece hasta 3 meses de protección de renta, con servicio anual de protección legal para el inmueble.",
+    'MLegal Habitacional': "Se enfoca en la protección legal. Incluye la asesoría y defensa legal para su propiedad, cubriendo los gastos necesarios para su recuperación.",
+    'MLegal Comercial': "Se enfoca en la protección legal. Incluye la asesoría y defensa legal para su propiedad, cubriendo los gastos necesarios para su recuperación.",
+    'M3 Light Habitacional': "Actualmente no está disponible. Incluía hasta 3 meses de protección de renta con servicio de protección legal, para rentas superiores a $20,000, con un límite de pago de hasta $10,000.",
+    'M3 Light Comercial': "Actualmente no está disponible. Incluía hasta 3 meses de protección de renta con servicio de protección legal, para rentas superiores a $20,000, con un límite de pago de hasta $10,000."
+}
+
+# --- Lógica de la Simulación ---
+def generar_instruccion_ia(perfil, detalles_del_caso):
+    numero_aleatorio = random.randint(1000, 9999)
+    inmueble = f"A{numero_aleatorio}"
+    
+    reglas_generales = f"""
+    Eres el/la {perfil['tipo']} llamado/a {perfil['nombre']}. Tu personalidad es '{perfil
