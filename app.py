@@ -117,12 +117,11 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     - Si te preguntan si habrá un incremento en la renta, elige una de las siguientes respuestas de forma aleatoria:
       - "Sí, me gustaría que la renta subiera conforme al INPC. ¿Cuánto podría subir?"
       - "No, queremos mantener la misma renta."
-    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio entre 1000 y 100000.
+    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio entre 1000 y 100000, usando el formato con comas. Por ejemplo: "$15,500 MXN".
     - Si te preguntan qué producto se contratará, responde con el nombre del producto que se acordó o que tienes actualmente.
     - Si te preguntan quién pagará el servicio, elige una de las siguientes opciones al azar: "100% propietario", "100% inquilino", "50% propietario, 50% inquilino".
     - Si te preguntan por la firma, elige una de las siguientes opciones al azar: "digital" o "presencial".
     - Si te preguntan si quieren hacer un cambio en el contrato, responde de forma aleatoria con "sí" o "no". Si la respuesta es sí, menciona una cláusula aleatoria (por ejemplo: "Sí, me gustaría revisar la cláusula de mascotas" o "Sí, me gustaría ver la cláusula de reparaciones y mantenimiento").
-
     """
     if perfil['tipo'] == 'broker':
         reglas_especificas = "Como broker, obtienes una comisión por la renovación. Tu motivación es también lograr la renovación por la comisión."
@@ -150,8 +149,14 @@ def iniciar_simulacion():
     instruccion = generar_instruccion_ia(perfil_aleatorio, detalles_del_caso)
     model = genai.GenerativeModel('gemini-1.5-flash')
     st.session_state.chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
+    
+    # Nuevo: Aquí se aplica el formato al monto de la renta en la respuesta inicial
     objecion_inicial = st.session_state.chat_history.send_message("Inicia la conversación como si estuvieras revisando tu próxima renovación y da una primera objeción o pregunta.").text
-    st.session_state.mensajes = [{"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"}]
+    
+    # Aseguramos que el monto de la renta en el mensaje inicial también esté formateado
+    monto_formateado = f"{detalles_del_caso['monto_renta']:,}"
+    
+    st.session_state.mensajes = [{"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${monto_formateado}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"}]
 
 # --- Lógica de Interacción del Chat ---
 def handle_chat_input():
