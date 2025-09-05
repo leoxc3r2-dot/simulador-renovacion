@@ -66,6 +66,15 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     numero_aleatorio = random.randint(1000, 9999)
     inmueble = f"A{numero_aleatorio}"
     
+    # Nuevo: Escenarios aleatorios para objeciones
+    objeciones_adicionales = ""
+    # 25% de probabilidad de incluir una pregunta sobre prórroga
+    if random.random() < 0.25:
+        objeciones_adicionales += "\n- Puedes preguntar sobre la posibilidad de una prórroga o un plan de pago mensual, ya que el inquilino solo estará unos meses más."
+    # 25% de probabilidad de incluir una pregunta sobre incremento por inflación
+    if random.random() < 0.25:
+        objeciones_adicionales += "\n- Puedes preguntar si la renta subirá conforme a la inflación o si se mantendrá igual."
+
     reglas_generales = f"""
     Eres el/la {perfil['tipo']} llamado/a {perfil['nombre']}. Tu personalidad es '{perfil['personalidad']}' y tu motivación principal es: '{perfil['motivacion']}'.
     
@@ -97,12 +106,23 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
         - "Considero que existen otras formas de proteger mis ingresos de alquiler."
         - "No estoy completamente seguro de que el servicio de protección de renta funcione como promete."
         - "No quiero complicarme con un proceso de renovación largo o burocrático."
-        - Puedes preguntar si la renta subirá conforme a la inflación o si se mantendrá igual.
         - "El inquilino se retira."
         - "Ya se vendió el inmueble."
         - "Vamos a renovar con otro servicio."
         - "Solo haremos los contratos, no la protección."
         - "El costo es muy caro."
+    {objeciones_adicionales}
+    
+    Además, debes ser capaz de responder a estas preguntas de manera realista:
+    - Si te preguntan si habrá un incremento en la renta, elige una de las siguientes respuestas de forma aleatoria:
+      - "Sí, me gustaría que la renta subiera conforme al INPC. ¿Cuánto podría subir?"
+      - "No, queremos mantener la misma renta."
+    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio entre 1000 y 100000.
+    - Si te preguntan qué producto se contratará, responde con el nombre del producto que se acordó o que tienes actualmente.
+    - Si te preguntan quién pagará el servicio, elige una de las siguientes opciones al azar: "100% propietario", "100% inquilino", "50% propietario, 50% inquilino".
+    - Si te preguntan por la firma, elige una de las siguientes opciones al azar: "digital" o "presencial".
+    - Si te preguntan si quieren hacer un cambio en el contrato, responde de forma aleatoria con "sí" o "no". Si la respuesta es sí, menciona una cláusula aleatoria (por ejemplo: "Sí, me gustaría revisar la cláusula de mascotas" o "Sí, me gustaría ver la cláusula de reparaciones y mantenimiento").
+
     """
     if perfil['tipo'] == 'broker':
         reglas_especificas = "Como broker, obtienes una comisión por la renovación. Tu motivación es también lograr la renovación por la comisión."
