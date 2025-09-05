@@ -170,7 +170,9 @@ if prompt := st.chat_input("Escribe tu respuesta aquí..."):
     if prompt.lower() == "terminar":
         st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
         del st.session_state.chat_history
+        st.rerun() # Fuerzo el reinicio controlado para que se muestre el último mensaje
     else:
         with st.spinner("Pensando..."):
             response = st.session_state.chat_history.send_message(prompt)
             st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+        st.rerun() # Fuerzo el reinicio controlado para mostrar la respuesta de la IA
