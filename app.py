@@ -139,6 +139,18 @@ def iniciar_simulacion():
     
     st.session_state.mensajes.append({"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"})
 
+def generar_respuesta_ia(prompt):
+    st.session_state.mensajes.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+
+    if prompt.lower() == "terminar":
+        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
+        del st.session_state.chat_history
+    else:
+        with st.spinner("Pensando..."):
+            response = st.session_state.chat_history.send_message(prompt)
+            st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+
 # --- Interfaz de Usuario de Streamlit ---
 st.title("Simulador de Negociación de Renovaciones MoradaUno")
 
@@ -163,16 +175,4 @@ if st.button("Iniciar Simulación"):
 for msg in st.session_state.mensajes:
     st.chat_message(msg["role"]).write(msg["content"])
 
-if prompt := st.chat_input("Escribe tu respuesta aquí..."):
-    st.session_state.mensajes.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-    
-    if prompt.lower() == "terminar":
-        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
-        del st.session_state.chat_history
-        st.rerun() # Fuerzo el reinicio controlado para que se muestre el último mensaje
-    else:
-        with st.spinner("Pensando..."):
-            response = st.session_state.chat_history.send_message(prompt)
-            st.session_state.mensajes.append({"role": "assistant", "content": response.text})
-        st.rerun() # Fuerzo el reinicio controlado para mostrar la respuesta de la IA
+st.chat_input("Escribe tu respuesta aquí...", on_submit=generar_respuesta_ia, key="chat_input")
