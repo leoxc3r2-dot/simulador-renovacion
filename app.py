@@ -117,11 +117,16 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     - Si te preguntan si habrá un incremento en la renta, elige una de las siguientes respuestas de forma aleatoria:
       - "Sí, me gustaría que la renta subiera conforme al INPC. ¿Cuánto podría subir?"
       - "No, queremos mantener la misma renta."
-    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio entre 1000 y 100000, usando el formato con comas. Por ejemplo: "$15,500 MXN".
+    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio entre 1000 y 100000. Usa el formato "$[cantidad con comas] MXN", por ejemplo: "$15,500 MXN".
     - Si te preguntan qué producto se contratará, responde con el nombre del producto que se acordó o que tienes actualmente.
     - Si te preguntan quién pagará el servicio, elige una de las siguientes opciones al azar: "100% propietario", "100% inquilino", "50% propietario, 50% inquilino".
     - Si te preguntan por la firma, elige una de las siguientes opciones al azar: "digital" o "presencial".
     - Si te preguntan si quieren hacer un cambio en el contrato, responde de forma aleatoria con "sí" o "no". Si la respuesta es sí, menciona una cláusula aleatoria (por ejemplo: "Sí, me gustaría revisar la cláusula de mascotas" o "Sí, me gustaría ver la cláusula de reparaciones y mantenimiento").
+    
+    Reglas de formato:
+    - **Siempre usa texto plano.** No uses negritas, cursivas, o cualquier otro tipo de formato a menos que sea necesario para resaltar una palabra.
+    - **Separa las palabras con espacios.** Asegúrate de que no haya texto corrido como `Esosonaproximadamente`.
+    - **Usa el formato numérico correcto.** Cuando menciones una cantidad de dinero, usa el formato con comas y el signo de pesos, por ejemplo: `$73,013 MXN`.
     """
     if perfil['tipo'] == 'broker':
         reglas_especificas = "Como broker, obtienes una comisión por la renovación. Tu motivación es también lograr la renovación por la comisión."
