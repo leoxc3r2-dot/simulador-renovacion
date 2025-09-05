@@ -112,44 +112,48 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     return f"{reglas_generales}\n{reglas_especificas}\nTu objetivo es ser persuadido/a para renovar. Responde de forma natural y realista."
 
 def iniciar_simulacion():
+    # Inicializa el historial de chat y el estado de la simulación
     perfil_aleatorio = random.choice(perfiles_de_simulacion)
     producto_elegido = random.choice(tipos_de_producto)
     uso_suelo_elegido = 'Habitacional' if 'Habitacional' in producto_elegido else 'Comercial'
-
     if 'M3 Light' in producto_elegido:
         monto_renta_aleatorio = random.randint(rango_renta_light[0], rango_renta_light[1])
     else:
         monto_renta_aleatorio = random.randint(rango_renta[0], rango_renta[1])
-    
     detalles_del_caso = {
         'producto_actual': producto_elegido,
         'uso_suelo': uso_suelo_elegido,
         'monto_renta': monto_renta_aleatorio
     }
-    
     st.session_state.perfil_actual = perfil_aleatorio
     st.session_state.detalles_del_caso = detalles_del_caso
-    
     instruccion = generar_instruccion_ia(perfil_aleatorio, detalles_del_caso)
-    
     model = genai.GenerativeModel('gemini-1.5-flash')
     st.session_state.chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
-    
     objecion_inicial = st.session_state.chat_history.send_message("Inicia la conversación como si estuvieras revisando tu próxima renovación y da una primera objeción o pregunta.").text
-    
-    st.session_state.mensajes.append({"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"})
+    st.session_state.mensajes = [{"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${detalles_del_caso['monto_renta']:,}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"}]
 
-def generar_respuesta_ia(prompt):
-    st.session_state.mensajes.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-
-    if prompt.lower() == "terminar":
-        st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
-        del st.session_state.chat_history
-    else:
-        with st.spinner("Pensando..."):
-            response = st.session_state.chat_history.send_message(prompt)
-            st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+# --- Lógica de Interacción del Chat ---
+def handle_chat_input():
+    if st.session_state.prompt:
+        user_prompt = st.session_state.prompt
+        st.session_state.mensajes.append({"role": "user", "content": user_prompt})
+        
+        if user_prompt.lower() == "terminar":
+            st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
+            if 'chat_history' in st.session_state:
+                del st.session_state.chat_history
+        else:
+            if 'chat_history' not in st.session_state:
+                st.session_state.mensajes.append({"role": "assistant", "content": "Por favor, inicia una nueva simulación con el botón 'Iniciar Simulación'."})
+            else:
+                with st.spinner("Pensando..."):
+                    try:
+                        response = st.session_state.chat_history.send_message(user_prompt)
+                        st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+                    except Exception as e:
+                        st.error(f"Ocurrió un error al comunicarse con la IA: {e}")
+                        st.session_state.mensajes.append({"role": "assistant", "content": "Lo siento, hubo un problema. Por favor, intenta de nuevo o reinicia la simulación."})
 
 # --- Interfaz de Usuario de Streamlit ---
 st.title("Simulador de Negociación de Renovaciones MoradaUno")
@@ -169,10 +173,9 @@ if "mensajes" not in st.session_state:
     st.session_state.mensajes = []
     
 if st.button("Iniciar Simulación"):
-    st.session_state.mensajes = []
     iniciar_simulacion()
     
 for msg in st.session_state.mensajes:
     st.chat_message(msg["role"]).write(msg["content"])
 
-st.chat_input("Escribe tu respuesta aquí...", on_submit=generar_respuesta_ia, key="chat_input")
+st.chat_input("Escribe tu respuesta aquí...", key="prompt", on_submit=handle_chat_input)
