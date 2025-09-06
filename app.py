@@ -49,7 +49,7 @@ tipos_de_producto = [
 rango_renta = (1000, 100000)
 rango_renta_light = (20000, 100000)
 
-# --- Información de los servicios de MoradaUno ---
+# Información de los servicios de MoradaUno
 informacion_productos = {
     'M12 Habitacional': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
     'M12 Comercial': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
@@ -132,12 +132,15 @@ def iniciar_simulacion():
     uso_suelo_elegido = 'Habitacional' if 'Habitacional' in producto_elegido else 'Comercial'
 
     # Lógica para balancear las rentas
-    if random.random() < 0.5:
-        # 50% de probabilidad de tener una renta baja (< $20,000)
-        monto_renta_aleatorio = random.randint(1000, 19999)
+    if 'M3 Light' in producto_elegido:
+        # Si el producto es M3 Light, la renta siempre será > $20,000
+        monto_renta_aleatorio = random.randint(20001, 100000)
+    elif random.random() < 0.5:
+        # 50% de probabilidad de tener una renta baja (< $20,000) para otros productos
+        monto_renta_aleatorio = random.randint(1000, 20000)
     else:
-        # 50% de probabilidad de tener una renta alta (> $20,000)
-        monto_renta_aleatorio = random.randint(20000, 100000)
+        # 50% de probabilidad de tener una renta alta (> $20,000) para otros productos
+        monto_renta_aleatorio = random.randint(20001, 100000)
     
     detalles_del_caso = {
         'producto_actual': producto_elegido,
@@ -163,42 +166,4 @@ def handle_chat_input():
         st.session_state.mensajes.append({"role": "user", "content": user_prompt})
         
         if user_prompt.lower() == "terminar":
-            st.session_state.mensajes.append({"role": "assistant", "content": "Simulación finalizada. ¡Buen trabajo! Presiona 'Iniciar Simulación' para comenzar de nuevo."})
-            if 'chat_history' in st.session_state:
-                del st.session_state.chat_history
-        else:
-            if 'chat_history' not in st.session_state:
-                st.session_state.mensajes.append({"role": "assistant", "content": "Por favor, inicia una nueva simulación con el botón 'Iniciar Simulación'."})
-            else:
-                with st.spinner("Pensando..."):
-                    try:
-                        response = st.session_state.chat_history.send_message(user_prompt)
-                        st.session_state.mensajes.append({"role": "assistant", "content": response.text})
-                    except Exception as e:
-                        st.error(f"Ocurrió un error al comunicarse con la IA: {e}")
-                        st.session_state.mensajes.append({"role": "assistant", "content": "Lo siento, hubo un problema. Por favor, intenta de nuevo o reinicia la simulación."})
-
-# --- Interfaz de Usuario de Streamlit ---
-st.title("Simulador de Negociación de Renovaciones MoradaUno")
-
-st.markdown("""
-    Este simulador te ayuda a practicar el manejo de objeciones con brokers y propietarios inmobiliarios en el contexto de MoradaUno.
-    Cada vez que inicies una simulación, te enfrentarás a un perfil aleatorio con sus propias motivaciones y reglas.
-
-    **Instrucciones:**
-    1. Presiona el botón **"Iniciar Simulación"** para comenzar.
-    2. Lee la objeción del broker o propietario y escribe tu respuesta en el chat.
-    3. Tu objetivo es convencerlo de renovar, abordando sus objeciones de forma lógica y persuasiva.
-    4. Escribe la palabra **"terminar"** en el chat para finalizar la simulación en cualquier momento.
-""")
-
-if "mensajes" not in st.session_state:
-    st.session_state.mensajes = []
-    
-if st.button("Iniciar Simulación"):
-    iniciar_simulacion()
-    
-for msg in st.session_state.mensajes:
-    st.chat_message(msg["role"]).write(msg["content"])
-
-st.chat_input("Escribe tu respuesta aquí...", key="prompt", on_submit=handle_chat_input)
+            st.session_state.mensajes.append({"role
