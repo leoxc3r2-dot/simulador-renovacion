@@ -49,7 +49,7 @@ tipos_de_producto = [
 rango_renta = (1000, 100000)
 rango_renta_light = (20000, 100000)
 
-# Información de los servicios de MoradaUno
+# --- Información de los servicios de MoradaUno ---
 informacion_productos = {
     'M12 Habitacional': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
     'M12 Comercial': "Ofrece hasta 12 meses de protección de renta, con servicio de protección legal para el inmueble, cubriendo gastos y trámites para su recuperación.",
@@ -66,7 +66,6 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     numero_aleatorio = random.randint(1000, 9999)
     inmueble = f"A{numero_aleatorio}"
     
-    # Lista de objeciones iniciales para que la IA elija una al azar
     objeciones_iniciales = [
         "El inquilino se retira, por lo que ya no vamos a necesitar el servicio.",
         "El servicio me parece muy caro, no estoy seguro si vale la pena seguir pagando.",
@@ -77,7 +76,6 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
         "Considero que existen otras formas de proteger mis ingresos, ¿por qué debería elegir MoradaUno?",
     ]
     
-    # La IA elegirá una de las objeciones iniciales
     objecion_inicial_elegida = random.choice(objeciones_iniciales)
 
     reglas_generales = f"""
@@ -109,7 +107,7 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     - Si te preguntan si habrá un incremento en la renta, elige una de las siguientes respuestas de forma aleatoria:
       - "Sí, me gustaría que la renta subiera conforme al INPC. ¿Cuánto podría subir?"
       - "No, queremos mantener la misma renta."
-    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio entre 1000 y 100000. Usa el formato "$[cantidad con comas] MXN", por ejemplo: "$15,500 MXN".
+    - Si se llega a un acuerdo y te preguntan por el nuevo monto de renta, responde con un monto de renta aleatorio dentro de los rangos establecidos. Usa el formato "$[cantidad con comas] MXN", por ejemplo: "$15,500 MXN".
     - Si te preguntan qué producto se contratará, responde con el nombre del producto que se acordó o que tienes actualmente.
     - Si te preguntan quién pagará el servicio, elige una de las siguientes opciones al azar: "100% propietario", "100% inquilino", "50% propietario, 50% inquilino".
     - Si te preguntan por la firma, elige una de las siguientes opciones al azar: "digital" o "presencial".
@@ -132,10 +130,15 @@ def iniciar_simulacion():
     perfil_aleatorio = random.choice(perfiles_de_simulacion)
     producto_elegido = random.choice(tipos_de_producto)
     uso_suelo_elegido = 'Habitacional' if 'Habitacional' in producto_elegido else 'Comercial'
-    if 'M3 Light' in producto_elegido:
-        monto_renta_aleatorio = random.randint(rango_renta_light[0], rango_renta_light[1])
+
+    # Lógica para balancear las rentas
+    if random.random() < 0.5:
+        # 50% de probabilidad de tener una renta baja (< $20,000)
+        monto_renta_aleatorio = random.randint(1000, 19999)
     else:
-        monto_renta_aleatorio = random.randint(rango_renta[0], rango_renta[1])
+        # 50% de probabilidad de tener una renta alta (> $20,000)
+        monto_renta_aleatorio = random.randint(20000, 100000)
+    
     detalles_del_caso = {
         'producto_actual': producto_elegido,
         'uso_suelo': uso_suelo_elegido,
