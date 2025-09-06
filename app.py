@@ -66,14 +66,19 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     numero_aleatorio = random.randint(1000, 9999)
     inmueble = f"A{numero_aleatorio}"
     
-    # Nuevo: Escenarios aleatorios para objeciones
-    objeciones_adicionales = ""
-    # 25% de probabilidad de incluir una pregunta sobre prórroga
-    if random.random() < 0.25:
-        objeciones_adicionales += "\n- Puedes preguntar sobre la posibilidad de una prórroga o un plan de pago mensual, ya que el inquilino solo estará unos meses más."
-    # 25% de probabilidad de incluir una pregunta sobre incremento por inflación
-    if random.random() < 0.25:
-        objeciones_adicionales += "\n- Puedes preguntar si la renta subirá conforme a la inflación o si se mantendrá igual."
+    # Lista de objeciones iniciales para que la IA elija una al azar
+    objeciones_iniciales = [
+        "El inquilino se retira, por lo que ya no vamos a necesitar el servicio.",
+        "El servicio me parece muy caro, no estoy seguro si vale la pena seguir pagando.",
+        "No hemos tenido problemas con los pagos, por lo que no veo la necesidad de seguir pagando la protección.",
+        "No estoy seguro de qué tan completo es el servicio, ¿podrías explicarme qué cubre exactamente?",
+        "Mi inquilino siempre ha sido muy puntual, tengo mucha confianza en él.",
+        "Vamos a vender el inmueble, entonces no es necesario renovar el contrato.",
+        "Considero que existen otras formas de proteger mis ingresos, ¿por qué debería elegir MoradaUno?",
+    ]
+    
+    # La IA elegirá una de las objeciones iniciales
+    objecion_inicial_elegida = random.choice(objeciones_iniciales)
 
     reglas_generales = f"""
     Eres el/la {perfil['tipo']} llamado/a {perfil['nombre']}. Tu personalidad es '{perfil['personalidad']}' y tu motivación principal es: '{perfil['motivacion']}'.
@@ -95,23 +100,10 @@ def generar_instruccion_ia(perfil, detalles_del_caso):
     - Tu inquilino actual es el Sr. Juan Pérez y la obligada solidaria es la Sra. Ana García.
     
     Reglas del juego:
-    - Debes poner objeciones lógicas basadas en tu perfil.
+    - Tu primera respuesta debe ser la siguiente objeción: "{objecion_inicial_elegida}"
+    - A partir de ahí, debes mantener la conversación y generar nuevas objeciones lógicas basadas en tu perfil.
     - Puedes preguntar por descuentos o cambios en la figura del inquilino o el obligado solidario.
     - Puedes preguntar cómo funcionan las protecciones para tener un mejor entendimiento del servicio.
-    - Objeciones comunes a mencionar:
-        - "El servicio es caro, y no estoy seguro de si vale la pena seguir pagando."
-        - "No he tenido problemas con el pago, por lo que no veo la necesidad de seguir pagando."
-        - "Mi inquilino siempre ha sido puntual, tengo confianza en él."
-        - "No estoy seguro de qué tan completo es el servicio y qué situaciones exactas cubre."
-        - "Considero que existen otras formas de proteger mis ingresos de alquiler."
-        - "No estoy completamente seguro de que el servicio de protección de renta funcione como promete."
-        - "No quiero complicarme con un proceso de renovación largo o burocrático."
-        - "El inquilino se retira."
-        - "Ya se vendió el inmueble."
-        - "Vamos a renovar con otro servicio."
-        - "Solo haremos los contratos, no la protección."
-        - "El costo es muy caro."
-    {objeciones_adicionales}
     
     Además, debes ser capaz de responder a estas preguntas de manera realista:
     - Si te preguntan si habrá un incremento en la renta, elige una de las siguientes respuestas de forma aleatoria:
@@ -155,10 +147,8 @@ def iniciar_simulacion():
     model = genai.GenerativeModel('gemini-1.5-flash')
     st.session_state.chat_history = model.start_chat(history=[{"role": "user", "parts": [instruccion]}])
     
-    # Nuevo: Aquí se aplica el formato al monto de la renta en la respuesta inicial
-    objecion_inicial = st.session_state.chat_history.send_message("Inicia la conversación como si estuvieras revisando tu próxima renovación y da una primera objeción o pregunta.").text
+    objecion_inicial = st.session_state.chat_history.send_message("Inicia la conversación.").text
     
-    # Aseguramos que el monto de la renta en el mensaje inicial también esté formateado
     monto_formateado = f"{detalles_del_caso['monto_renta']:,}"
     
     st.session_state.mensajes = [{"role": "assistant", "content": f"**Perfil:** {perfil_aleatorio['nombre']} ({perfil_aleatorio['tipo']})\n\n**Detalles del Caso:**\n- **Producto:** {detalles_del_caso['producto_actual']}\n- **Renta:** ${monto_formateado}\n\n**{perfil_aleatorio['nombre']}:** {objecion_inicial}"}]
