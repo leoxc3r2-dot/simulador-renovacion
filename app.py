@@ -1,62 +1,64 @@
 import streamlit as st
-import random
 import google.generativeai as genai
 
-# --- CONFIGURACIÓN ---
-st.set_page_config(page_title="Simulador MoradaUno", layout="wide")
+st.set_page_config(page_title="Diagnóstico MoradaUno", layout="wide")
 
+# 1. Configuración de API
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 else:
-    st.error("⚠️ Falta GOOGLE_API_KEY en Secrets.")
+    st.error("❌ No se encontró GOOGLE_API_KEY en Secrets.")
     st.stop()
 
-# --- PERFILES ---
-perfiles = [
-    {'nombre': 'Carlos Ruiz', 'tipo': 'broker', 'objecion': 'La comisión es muy baja.'},
-    {'nombre': 'Alicia Mendoza', 'tipo': 'propietario', 'objecion': 'No confío en estos servicios.'}
-]
+st.title("🛠 Panel de Diagnóstico y Simulación")
 
-# --- LÓGICA ---
-def iniciar_simulacion():
-    perfil = random.choice(perfiles)
+# --- BLOQUE DE DIAGNÓSTICO ---
+# Esto nos dirá exactamente qué modelos ve tu cuenta
+with st.expander("Ver modelos disponibles en tu cuenta"):
     try:
-        # USAREMOS EL NOMBRE MÁS ESTÁNDAR POSIBLE
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        chat = model.start_chat(history=[])
-        # Instrucción de sistema
-        chat.send_message(f"Actúa como {perfil['nombre']}. Tu objeción inicial es: {perfil['objecion']}. Habla breve.")
-        # Pedir primera frase
-        response = chat.send_message("Preséntate y dime tu objeción.")
-        
-        st.session_state.chat_history = chat
-        st.session_state.mensajes = [
-            {"role": "assistant", "content": f"**Simulación con {perfil['nombre']}**"},
-            {"role": "assistant", "content": response.text}
-        ]
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        st.write(models)
     except Exception as e:
-        st.error(f"Error crítico de conexión: {e}")
+        st.error(f"No se pudo listar los modelos: {e}")
 
-def responder():
-    if st.session_state.user_text:
-        t = st.session_state.user_text
-        st.session_state.mensajes.append({"role": "user", "content": t})
-        try:
-            r = st.session_state.chat_history.send_message(t)
-            st.session_state.mensajes.append({"role": "assistant", "content": r.text})
-        except Exception as e:
-            st.error(f"Error en chat: {e}")
+# --- LÓGICA DE LA IA ---
+def probar_conexion():
+    # Intentaremos con el nombre más genérico posible
+    # Si falla, prueba cambiar 'gemini-1.5-flash' por 'gemini-pro' aquí abajo
+    nombre_modelo = 'gemini-1.5-flash' 
+    
+    try:
+        model = genai.GenerativeModel(nombre_modelo)
+        # Prueba de vida simple
+        response = model.generate_content("Hola, responde solo con la palabra 'CONECTADO'")
+        
+        st.success(f"✅ ¡Conexión exitosa con {nombre_modelo}!")
+        st.info(f"Respuesta de la IA: {response.text}")
+        
+        # Guardar en sesión para el simulador
+        st.session_state.model_ready = True
+        st.session_state.chat = model.start_chat(history=[])
+        st.session_state.mensajes = [{"role": "assistant", "content": "¡Listo! ¿En qué puedo ayudarte con la renovación?"}]
+        
+    except Exception as e:
+        st.error("❌ Error de conexión todavía activo.")
+        st.warning(f"Detalle técnico: {e}")
+        st.info("Sugerencia: Si en la lista de arriba aparece 'models/gemini-pro', intenta usar ese.")
 
 # --- INTERFAZ ---
-st.title("🤝 Simulador MoradaUno")
+if st.button("🔌 Probar Conexión y Despertar IA"):
+    probar_conexion()
 
-if st.button("Iniciar"):
-    iniciar_simulacion()
-
-for m in st.session_state.get("mensajes", []):
-    with st.chat_message(m["role"]):
-        st.write(m["content"])
-
-if "chat_history" in st.session_state:
-    st.chat_input("Escribe...", key="user_text", on_submit=responder)
+# Mostrar chat solo si la conexión funciona
+if st.session_state.get("model_ready"):
+    for m in st.session_state.mensajes:
+        with st.chat_message(m["role"]):
+            st.write(m["content"])
+    
+    if prompt := st.chat_input("Escribe tu respuesta..."):
+        st.session_state.mensajes.append({"role": "user", "content": prompt})
+        with st.chat_message("user"): st.write(prompt)
+        
+        response = st.session_state.chat.send_message(prompt)
+        st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+        with st.chat_message("assistant"): st.write(response.text)
