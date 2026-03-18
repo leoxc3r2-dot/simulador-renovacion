@@ -20,7 +20,7 @@ if "chat" not in st.session_state:
     try:
         # Intentamos con el nombre que SÍ estaba en tu lista: gemini-2.0-flash
         # Si este falla, el sistema saltará al siguiente automáticamente
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         st.session_state.chat = model.start_chat(history=[])
         # Mensaje de inicialización
