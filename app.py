@@ -1,60 +1,55 @@
 import streamlit as st
 import google.generativeai as genai
+from google.api_core import client_options
 
-# --- 1. Configuración de la Página ---
+# --- 1. Configuración Visual ---
 st.set_page_config(page_title="Simulador MoradaUno", layout="centered")
 
-# --- 2. Conexión a la API ---
+# --- 2. Conexión Forzada a Producción ---
 if "GOOGLE_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    # Esta línea es la CLAVE: obliga a usar la API v1 estable, no la beta
+    options = client_options.ClientOptions(api_version="v1")
+    genai.configure(
+        api_key=st.secrets["GOOGLE_API_KEY"],
+        client_options=options
+    )
 else:
     st.error("Falta la clave GOOGLE_API_KEY en los Secrets.")
     st.stop()
 
 st.title("🤝 Simulador de Negociación")
 
-# --- 3. Inicialización del Chat ---
-# Usamos ÚNICAMENTE gemini-1.5-flash que es el más estable
+# --- 3. Lógica del Chat ---
 if "chat" not in st.session_state:
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        # Iniciamos el chat vacío
+        # Usamos el nombre completo del modelo para evitar confusiones
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         st.session_state.chat = model.start_chat(history=[])
         
-        # El primer mensaje configura al cliente
-        instruccion = (
-            "Eres un cliente de MoradaUno en México. No quieres renovar tu protección de renta "
-            "porque te parece cara. Saluda de forma natural y lanza tu primera objeción breve."
-        )
+        # Configuramos al cliente Ricardo
+        instruccion = "Eres Ricardo, un cliente de MoradaUno. No quieres renovar. Habla como mexicano de forma breve."
         response = st.session_state.chat.send_message(instruccion)
         
-        # Guardamos el primer mensaje en el historial visual
         st.session_state.mensajes = [{"role": "assistant", "content": response.text}]
     except Exception as e:
-        st.error(f"Error de conexión inicial: {e}")
+        st.error(f"Error técnico: {e}")
+        st.info("Si ves un 429, espera 1 minuto. Si ves un 404, revisa que la API Key sea la correcta.")
         st.stop()
 
-# --- 4. Interfaz de Usuario (Chat) ---
-# Mostrar mensajes previos
+# --- 4. Interfaz ---
 for m in st.session_state.mensajes:
     with st.chat_message(m["role"]):
         st.write(m["content"])
 
-# Entrada de texto del usuario
-if prompt := st.chat_input("Escribe tu argumento aquí..."):
-    # Mostrar mensaje del usuario
+if prompt := st.chat_input("Escribe tu argumento..."):
     st.session_state.mensajes.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.write(prompt)
     
-    # Obtener respuesta de la IA
     try:
         response = st.session_state.chat.send_message(prompt)
         st.session_state.mensajes.append({"role": "assistant", "content": response.text})
         with st.chat_message("assistant"):
             st.write(response.text)
     except Exception as e:
-        if "429" in str(e):
-            st.error("⚠️ Vas muy rápido. Espera 30 segundos y vuelve a intentar.")
-        else:
-            st.error(f"Error en la comunicación: {e}")
+        st.error(f"Error: {e}")
