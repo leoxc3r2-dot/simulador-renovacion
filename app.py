@@ -25,7 +25,6 @@ def iniciar_simulacion():
     perfil = random.choice(perfiles)
     monto = random.randint(12000, 45000)
     
-    # CAMBIO CLAVE: Usamos gemini-1.5-flash para mayor estabilidad y cuota
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         
@@ -36,9 +35,7 @@ def iniciar_simulacion():
         """
         
         chat = model.start_chat(history=[])
-        # Configuramos el personaje
         chat.send_message(prompt_sistema)
-        # Lanzamos la primera objeción
         response = chat.send_message("Preséntate brevemente y lanza tu primera objeción sobre por qué NO quieres renovar con MoradaUno.")
         
         st.session_state.chat_history = chat
@@ -48,7 +45,33 @@ def iniciar_simulacion():
         ]
         st.session_state.ready = True
     except Exception as e:
-        if "429" in str(e):
-            st.error("⚠️ Cuota agotada. Espera 60 segundos y vuelve a intentar.")
-        else:
-            st.
+        st.error(f"Error de conexión: {e}")
+
+def responder():
+    if st.session_state.usuario_input:
+        texto = st.session_state.usuario_input
+        st.session_state.mensajes.append({"role": "user", "content": texto})
+        
+        try:
+            response = st.session_state.chat_history.send_message(texto)
+            st.session_state.mensajes.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            st.error(f"Error en la IA: {e}")
+
+# --- Interfaz ---
+st.title("🤝 Simulador de Negociación MoradaUno")
+
+if st.button("🔄 Iniciar Nueva Simulación"):
+    iniciar_simulacion()
+
+# Dibujar mensajes
+if "mensajes" in st.session_state:
+    for m in st.session_state.mensajes:
+        with st.chat_message(m["role"]):
+            st.write(m["content"])
+
+# Chat input
+if st.session_state.get("ready"):
+    st.chat_input("Escribe tu respuesta aquí...", key="usuario_input", on_submit=responder)
+else:
+    st.info("Haz clic en el botón de arriba para comenzar la práctica.")
